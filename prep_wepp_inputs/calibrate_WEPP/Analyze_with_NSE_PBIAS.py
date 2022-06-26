@@ -108,7 +108,7 @@ def NSE_PBIAS_Analysis(obs_dir, wshed, cli_dir, wepp_out_dir, hillID, mod_yrs, T
     ## Obs data ##
 
 
-    #merge observed precip to observed runoff/TSS events for removing snow melt runoff events
+    ## merge observed precip to observed runoff/TSS events for removing snow melt runoff events
 
     event_precip = []
 
@@ -125,6 +125,7 @@ def NSE_PBIAS_Analysis(obs_dir, wshed, cli_dir, wepp_out_dir, hillID, mod_yrs, T
 
     #loop through runoff events (df rows)
     for index, row in obs_data_months.iterrows():
+
         #remove snow melt runoff events
         if row['Pr'] == 0 or row['RO'] > row['Pr']:
             obs_data_months.drop(index = index, inplace=True)
@@ -145,11 +146,11 @@ def NSE_PBIAS_Analysis(obs_dir, wshed, cli_dir, wepp_out_dir, hillID, mod_yrs, T
         crop1_df = combined_df[combined_df['Year'].astype(int).isin(crop1_yrs)]
         crop2_df = combined_df[combined_df['Year'].astype(int).isin(crop2_yrs)]
 
-        #set bins and months
+        ## set bins and months
             
         #create lists that will hold avg values by bin
-        cal_crop_bins = []
-        val_crop_bins = []
+        val1_crop_bins = []
+        val2_crop_bins = []
 
         for low_bin, high_bin in zip(lower_bins, upper_bins):
 
@@ -176,17 +177,17 @@ def NSE_PBIAS_Analysis(obs_dir, wshed, cli_dir, wepp_out_dir, hillID, mod_yrs, T
 
                     split_df = [binned_df,binned_df]
 
-                cal_crop_bins.append(split_df[0])
-                val_crop_bins.append(split_df[1])
+                val1_crop_bins.append(split_df[0])
+                val2_crop_bins.append(split_df[1])
 
             split_bins(bins1_df)
             split_bins(bins2_df)
 
         #combine events in bins
-        cal_crop_recomb = pd.concat(cal_crop_bins)
-        val_crop_recomb = pd.concat(val_crop_bins)
+        val1_crop_recomb = pd.concat(val1_crop_bins)
+        val2_crop_recomb = pd.concat(val2_crop_bins)
 
-        return cal_crop_recomb, val_crop_recomb
+        return val1_crop_recomb, val2_crop_recomb
         
     #Define precip bins
     lower_pr_bins = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110]
@@ -196,11 +197,12 @@ def NSE_PBIAS_Analysis(obs_dir, wshed, cli_dir, wepp_out_dir, hillID, mod_yrs, T
     lower_RO_bins = [0, 5, 10, 15, 25]
     upper_RO_bins = [5, 10, 15, 25, 50, 500]
 
-    #Get 
-    obs_RO_cal, obs_RO_val = get_obs_avgs(obs_data_months, crop1_yrs, crop2_yrs,lower_RO_bins, upper_RO_bins, 'RO')
-    obs_pr_cal, obs_pr_val = get_obs_avgs(comb_df_sel, crop1_yrs, crop2_yrs, lower_pr_bins, upper_pr_bins, 'filled_pr')
+    #Get outputs for two validation periods
+    obs_RO_val1, obs_RO_val2 = get_obs_avgs(obs_data_months, crop1_yrs, crop2_yrs,lower_RO_bins, upper_RO_bins, 'RO')
+    obs_pr_val1, obs_pr_val2 = get_obs_avgs(comb_df_sel, crop1_yrs, crop2_yrs, lower_pr_bins, upper_pr_bins, 'filled_pr')
 
-    obs_RO_all = pd.concat([obs_RO_cal,obs_RO_val])
+    #Combine two validation periods for full observed dataset (used for all calibration tests)
+    obs_RO_all = pd.concat([obs_RO_val1,obs_RO_val2])
 
     mod_df = mod_data_months.reset_index()
 
@@ -262,17 +264,17 @@ def NSE_PBIAS_Analysis(obs_dir, wshed, cli_dir, wepp_out_dir, hillID, mod_yrs, T
 
         return mean_vals, nse_pbias_df
 
-    avg_vals, nse_pbias_vals = compare_mod_obs(obs_RO_val, obs_pr_val)
+    #run compare_mod_obs using full observed dataset (or half for validation)
+    avg_vals, nse_pbias_vals = compare_mod_obs(obs_RO_all, comb_df_sel)
 
     avg_vals_dic[wshed] = avg_vals
     nse_pbias_dic[wshed] = nse_pbias_vals
     
 
-#create list of watershed IDs, simulated hillslope IDs, and number 
-#of years in each observed crop rotation (crop rot = simulation period)
+#create list of watershed IDs, simulated DF hillslope IDs,
+# and list of directories that hold simiulated outputs
 wshed_lst = ['BE1', 'DO1', 'GO1', 'RO1', 'ST1']
 hillslopes = ['p221', 'p206', 'p66', 'p77', 'p154']
-ke_mods = ['Ke x 3', 'Ke / 2','Ke x 3','Ke x 5','No Ke Adj', '']
 mod_dir_lst = ['DF_Comp3/Obs_full',\
                 'DF_Comp3/Obs_full',\
                 'DF_Comp3/Obs_full',\
@@ -400,8 +402,8 @@ def graph_comps(in_dic, x_lab, y_lab, title, out_name, comp_type, col_lab1, col_
     wshed_lst_graphing = ['BE1', 'DO1', 'GO1', 'RO1', 'ST1', 'Combined']
 
     #loop through watershed, crops, colors for crops, and the subplot x,y coords
-    for wshed, subx, suby, ke_mod, nsepb_y, in \
-        zip(wshed_lst_graphing, subx_vals, suby_vals, ke_mods,nsepb_yvals):
+    for wshed, subx, suby, nsepb_y, in \
+        zip(wshed_lst_graphing, subx_vals, suby_vals,nsepb_yvals):
         
         #define x and y values
         obs_x = in_dic[wshed]['Month']
@@ -428,7 +430,7 @@ def graph_comps(in_dic, x_lab, y_lab, title, out_name, comp_type, col_lab1, col_
         axes[subx,suby].set_ylabel(y_lab)
 
         #Add sub-title
-        axes[subx,suby].set_title('{} {}'.format(wshed,ke_mod))
+        axes[subx,suby].set_title('{}'.format(wshed))
 
         NSE = nse_pbias_dic[wshed][NSE_col]
         PBIAS = nse_pbias_dic[wshed][PBIAS_col]
@@ -457,14 +459,14 @@ def graph_comps(in_dic, x_lab, y_lab, title, out_name, comp_type, col_lab1, col_
 
 
 
-RO_title = "Uncalibrated WEPP Outputs vs Discovery Farms Data: \n Average Total Monthly Runoff"
-RR_title = "Uncalibrated WEPP Outputs vs Discovery Farms Data: \n Monthly Runoff Ratios"
-TSS_title = "Uncalibrated WEPP Outputs vs Discovery Farms Data: \n Average Total Monthly Soil Loss"
+RO_title = "Fully Calibrated WEPP Outputs vs Discovery Farms Data: \n Average Total Monthly Runoff"
+RR_title = "Fully Calibrated WEPP Outputs vs Discovery Farms Data: \n Monthly Runoff Ratios"
+TSS_title = "Fully Calibrated WEPP Outputs vs Discovery Farms Data: \n Average Total Monthly Soil Loss"
 
 RO_ylab = 'Average Total Runoff (mm)'
 RR_ylab = 'Average Runoff Ratio (mm)'
 TSS_ylab = 'Average Total Soil Loss (tons/ha)'
 
-graph_comps(avg_vals_dic, 'Month', RO_ylab, RO_title, 'avgRO', 'test', 'obs_RO', 'mod_RO', 'NSE_RO', 'PBIAS_RO')
-graph_comps(avg_vals_dic, 'Month', RR_ylab, RR_title, 'avgRR', 'test', 'obs_RR', 'mod_RR', 'NSE_RR', 'PBIAS_RR')
-graph_comps(avg_vals_dic, 'Month', TSS_ylab, TSS_title, 'avgTSS', 'test', 'obs_TSS', 'mod_TSS', 'NSE_TSS', 'PBIAS_TSS')
+graph_comps(avg_vals_dic, 'Month', RO_ylab, RO_title, 'avgRO', 'full_cal', 'obs_RO', 'mod_RO', 'NSE_RO', 'PBIAS_RO')
+graph_comps(avg_vals_dic, 'Month', RR_ylab, RR_title, 'avgRR', 'full_cal', 'obs_RR', 'mod_RR', 'NSE_RR', 'PBIAS_RR')
+graph_comps(avg_vals_dic, 'Month', TSS_ylab, TSS_title, 'avgTSS', 'full_cal', 'obs_TSS', 'mod_TSS', 'NSE_TSS', 'PBIAS_TSS')

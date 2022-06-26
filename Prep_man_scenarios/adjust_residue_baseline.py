@@ -80,9 +80,25 @@ def adjust_residue_base(parent, file_type):
                 replace_string(norm_tan_2, new_tan_2)
                 replace_string(norm_tan_1, new_tan_1)
 
+#Remove tandem disk tillage in all files 
 
 wshed_lst = ['BE1', 'DO1', 'GO1', 'RO1', 'ST1']
 
+mod_lst = ['B3_59', 'B3_99', 'B4_59', 'B4_99',\
+           'L3_59', 'L3_99', 'L4_59', 'L4_99',\
+           'Obs']
+
+scen_lst = ['CC_B', 'CC_10', 'CC_20',\
+            'CT_B', 'CT_50', 'CT_100',\
+            'Per_m20','Per_p20','Per_B','Per_0',\
+            'Per_m20_100','Per_p20_100','Per_B_100','Per_0_100']
+
 for wshed in wshed_lst:
-    parent_dir = 'C:/Users/Garner/Soil_Erosion_Project/WEPP_PRWs/{}/Runs/Base/Obs/wepp/runs/'.format(wshed)        
-    adjust_residue_base(parent_dir, '.man')
+    
+    for mod in mod_lst:
+
+        for scen in scen_lst:
+
+            #define directory with hillslope projects
+            parent_dir = 'C:/Users/Garner/Soil_Erosion_Project/WEPP_PRWs/{}/New_Runs/{}/{}/wepp/runs/'.format(wshed,mod,scen)      
+            adjust_residue_base(parent_dir, '.man')

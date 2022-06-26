@@ -98,11 +98,16 @@ mod_lst = ['B3_59', 'B3_99', 'B4_59', 'B4_99',\
            'L3_59', 'L3_99', 'L4_59', 'L4_99',\
            'Obs']
 
+scen_lst = ['CC_B', 'CC_10', 'CC_20']
+
 
 for wshed in wshed_lst:
-    for mod in mod_lst:
 
-        parent_dir = 'C:/Users/Garner/Soil_Erosion_Project/WEPP_PRWs/{}/New_Runs/{}/Per_B/wepp/runs/'.format(wshed,mod)        
-        adjust_residue_CC(parent_dir, '.man')
+    for mod in mod_lst:
+        
+        for scen in scen_lst:
+
+            parent_dir = 'C:/Users/Garner/Soil_Erosion_Project/WEPP_PRWs/{}/New_Runs/{}/{}/wepp/runs/'.format(wshed,mod,scen)        
+            adjust_residue_CC(parent_dir, '.man')
 
 #%%

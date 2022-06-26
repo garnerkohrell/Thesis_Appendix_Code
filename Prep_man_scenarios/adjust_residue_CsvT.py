@@ -156,7 +156,9 @@ ST1_HS_lst = [2,4,5,6,8,9,12,13,17,19,20,23,24,25,26,29,32,37,41,45,47,\
 
 #loop through watershed list, climate list, and then management scenario lsit
 for wshed in wshed_lst:
+
     for mod in mod_lst:
+        
         for scen in scen_lst:
 
             #define directory with hillslope projects

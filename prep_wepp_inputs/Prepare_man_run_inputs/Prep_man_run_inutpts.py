@@ -1,54 +1,39 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[24]:
-
-
-def prep_input_files(runs_dir, HUC12_ID, HUC12_xl_out, Run_dir, model_labs, man_labs, periods):
+def prep_input_files(base_files, HUC12_ID, HUC12_xl_out):
     '''
     This function performs the following tasks:
 
-    1.) HUC12 IDs are removed from file names and replaced with the letter p.
-    2.) .run files are created
-    3.) Gets crop rotations, average slopes, and soil types for each hillslope
-    4.) Rotations in .man files are extended to 60 years
-    5.) Create baseline and future run directories for each management and climate
-        scenario. Then copy the base wepp/runs directory with the newly edited/prepped 
-        files to each Run_dir. 
+    1.) HUC12 IDs are removed from file names and replaced with the letter p
+    2.) WEPP run files are created
+    3.) Crop rotations, average slopes, and soil types for each hillslope are extracted
+    4.) Rotations in .man files are extended to 60 years so that WEPP can run the max
+        number of years in each climate file (WEPP stops after the final year in a climate
+        file is reached)
 
 
-    runs_dir = HUC12_path/Runs/{man scenario}/{cli scenario}/wepp/runs directory
+    base_files = directory holding the raw soil, topography, and management 
+    input files from the DEP
 
-    HUC12_ID = ID number of HUC12 watershed from DEP project
+    HUC12_ID = ID number of HUC12 watershed from DEP
 
     HUC12_xl_out = name of watershed that will be inserted into the name of 
     an output file that contains information on hillslope rotation, slopes, and
-    soil types.
-
-    Run_dir = path to Runs directory (HUC12_path/Runs/) which contains the sub-directories
-    for each management and climate scenario combination 
-
-    man/model_labs = list of management and climate scenario labels as strings
-
-    periods = list of time periods as integers 
+    soil types
 
     '''
     
-    import shutil, os
+    import os
     import pandas as pd
-    import numpy as np
     import re
     from statistics import mean
-    from distutils.dir_util import copy_tree
     
     print('Renaming files to WEPP format...')
     
-    #Rename all file types in runs_dir
-    for file in os.listdir(runs_dir):
+    #Rename all file types in base_files
+    for file in os.listdir(base_files):
         if file.startswith(HUC12_ID):
             file_num = file.replace(HUC12_ID, '')
-            old = str(runs_dir + file)
-            new = str(runs_dir + 'p' + file_num)
+            old = str(base_files + file)
+            new = str(base_files + 'p' + file_num)
 
             os.rename(old, new)
 
@@ -87,14 +72,14 @@ def prep_input_files(runs_dir, HUC12_ID, HUC12_xl_out, Run_dir, model_labs, man_
         inputs = create_run_inputs(run_lst)
         
         #write list of input commands to a blank .run file
-        with open(str(runs_dir + '{}.run'.format(p_hill)), 'w+') as file:
+        with open(str(base_files + '{}.run'.format(p_hill)), 'w+') as file:
             for line in inputs:
                 file.writelines(str(line)+'\n')
     
     print('Creating .run files...')
     
-    #loop through hillslopes in runs_dir
-    for file in os.listdir(runs_dir):
+    #loop through hillslopes in base_files
+    for file in os.listdir(base_files):
         #only select one file type to get hill_ids so that multiple run files
         #are not created
         if file.endswith('.man'):
@@ -104,7 +89,7 @@ def prep_input_files(runs_dir, HUC12_ID, HUC12_xl_out, Run_dir, model_labs, man_
             input_file_name = str('p' + str(file[1:-4]))
             output_file_name = str('H' + str(file[1:-4]))
             
-            #run create_run_file for each hillslope in runs_dir
+            #run create_run_file for each hillslope in base_files
             create_run_file(output_file_name, input_file_name, 60)
             
             
@@ -122,8 +107,8 @@ def prep_input_files(runs_dir, HUC12_ID, HUC12_xl_out, Run_dir, model_labs, man_
         rot_lst = []
         ID_lst = []
         
-        # Loop through all management files in runs_dir
-        for file in os.listdir(runs_dir):
+        # Loop through all management files in base_files
+        for file in os.listdir(base_files):
             if file.endswith('.man'):
                 
                 #Create temporary list for appending all crops present in 
@@ -131,7 +116,7 @@ def prep_input_files(runs_dir, HUC12_ID, HUC12_xl_out, Run_dir, model_labs, man_
                 temp_lst = []
 
                 #open file for reading
-                with open(str(runs_dir + file)) as f:
+                with open(str(base_files + file)) as f:
 
                     #read lines 
                     lines = f.readlines()
@@ -197,11 +182,11 @@ def prep_input_files(runs_dir, HUC12_ID, HUC12_xl_out, Run_dir, model_labs, man_
         
         avg_slopes = []
 
-        for file in os.listdir(runs_dir):
-            #loop through slope/topography files in runs_dir
+        for file in os.listdir(base_files):
+            #loop through slope/topography files in base_files
             if file.endswith('.slp'):  
                 #join path and file
-                current_path = ''.join((runs_dir, "/", file))
+                current_path = ''.join((base_files, "/", file))
                 
                 # read in file
                 reading_file = open(current_path, "r")
@@ -252,9 +237,9 @@ def prep_input_files(runs_dir, HUC12_ID, HUC12_xl_out, Run_dir, model_labs, man_
         sand_vals = []
         clay_vals = []
 
-        for file in os.listdir(runs_dir):
+        for file in os.listdir(base_files):
             if file.endswith('.sol'):  # search for file in directory
-                current_path = ''.join((runs_dir, "/", file)) # if found, add file name to end of path
+                current_path = ''.join((base_files, "/", file)) # if found, add file name to end of path
                 reading_file = open(current_path, "r") # read in file
 
                 lines = reading_file.readlines()  #read lines to a list
@@ -311,10 +296,10 @@ def prep_input_files(runs_dir, HUC12_ID, HUC12_xl_out, Run_dir, model_labs, man_
         Only needed if the management section of the .man files have rotation lengths
         less than the number of years in the climate .cli file.
         '''
-        for file in os.listdir(runs_dir):
+        for file in os.listdir(base_files):
             #select all .man files in the directory
             if file.endswith('.man'):
-                current_path = ''.join((runs_dir, "/", file))
+                current_path = ''.join((base_files, "/", file))
             
                 # read in file
                 with open(current_path, "r+") as file:
@@ -385,79 +370,7 @@ def prep_input_files(runs_dir, HUC12_ID, HUC12_xl_out, Run_dir, model_labs, man_
     hillslope_info.to_excel('C:/Users/Garner/Soil_Erosion_Project/WEPP_PRWs/{}/{}_info.xlsx'.format(HUC12_xl_out, HUC12_xl_out))
 
 
-    def edit_Keff_val(scale_val):
-        '''
-        Multiplys the Keff parameter in the .sol input file by a given
-        scale value for each overland flow element(OFE)
 
-        'line 4' = Line that includes the Keff parameter for the OFE. 
-
-        Each OFE has its own 'line 4'
-        '''
-        #Create path to run directory
-        
-        #loop through all input files in directory
-        for file_name in os.listdir(runs_dir):
-
-            #select soil files
-            if file_name.endswith('.sol'):
-                file = open(str(runs_dir+file_name), "r+") # read in file 
-                lines = file.readlines()  #read lines to a list
-
-                #loop through selected lines in each file
-                for num, line in enumerate(lines, 0):
-
-                    find_key = '0.750000' # Find 'Line 4' for each OFE
-
-                    if find_key in line:
-                        new_line = str(line[:-9] + str(round(float(line[-9::])*scale_val, 6)) + '\n')
-                        lines[num] = new_line
-
-                # move file pointer to the beginning of a file
-                file.seek(0)
-                # truncate the file
-                file.truncate()
-
-                #write new lines
-                file.writelines(lines)
-    print('Scaling Keff value...')
-    edit_Keff_val(1)
-
-    def create_dirs():
-        '''
-        Creates directories for each WEPP scenario run and then copies the base
-        wepp files for all hillslopes (excluding .cli files) to the newly created
-        run directory
-        '''
-        base_wepp = str(Run_dir + 'wepp/')
-
-        for mod_lab in model_labs:
-            for peri_lab in periods:
-
-                if peri_lab == '19':
-                    
-                    #Create path to new baseline run directory
-                    new_runs_dir = str(Run_dir + 'Base/' + mod_lab + '_' + peri_lab + '/' + 'wepp/')
-
-                    #Make new directories
-                    os.makedirs(new_runs_dir)
-
-                    #copy base_wepp directories/files into new baseline run directory
-                    copy_tree(base_wepp, new_runs_dir)
-
-
-                if peri_lab == '59' or peri_lab == '99':
-                    
-                    for man in man_labs:
-                        
-                        ### Create path to hillslope directory
-                        new_runs_dir_f = str(Run_dir + man + '/' + mod_lab + '_' + peri_lab + '/' + 'wepp/')
-                        
-                        # Make new directories
-                        os.makedirs(new_runs_dir_f)
-
-                        #copy base_wepp directories/files into new baseline run directory
-                        copy_tree(base_wepp, new_runs_dir_f)
-
-    print('Creating Baseline and Future WEPP Run directories...')             
-    create_dirs()
+##### After these edits were complete, the WEPP files were copied into directories for each
+##### climate and management scenario combination in every watershed. The fully prepared cligen files 
+##### were then copied into their corresponding directories.

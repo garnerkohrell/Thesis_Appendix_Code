@@ -50,14 +50,19 @@ def edit_Keff_val(scale_val,runs_dir):
 
 wshed = 'GO1'
 scale_val = 3
-scen_lst = ['CC', 'Comb', 'CT', 'NC','Per']
-mod_labs = ['L3', 'L4','B3', 'B4']
-period_lst = ['59','99']
+scen_lst = ['Per_0', 'Per_m20', 'Per_B', 'Per_p20']
+mod_labs = ['B3_59', 'B3_99', 'B4_59', 'B4_99',\
+           'L3_59', 'L3_99', 'L4_59', 'L4_99',\
+           'Obs']
 
-#Define WEPP project directory
-runs_dir = 'C:/Users/Garner/Soil_Erosion_Project/WEPP_PRWs/{}/Runs/Obs/wepp/runs/'.format(wshed)
-#run edit_Keff_val for runs directory and scale value
-edit_Keff_val(scale_val, runs_dir)
+#loop through climate models
+for mod in mod_labs:
+    
+    #loop through management scenarios
+    for scen in scen_lst:
 
-
-
+        #Define WEPP project directory
+        runs_dir = 'C:/Users/Garner/Soil_Erosion_Project/WEPP_PRWs/{}/New_Runs/{}_{}/{}/wepp/runs/'.format(wshed,mod,scen)
+        
+        #run edit_Keff_val for runs directory and scale value
+        edit_Keff_val(scale_val, runs_dir)

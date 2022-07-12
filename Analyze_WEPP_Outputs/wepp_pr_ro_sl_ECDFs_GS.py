@@ -36,6 +36,7 @@ def analyze_wepp_outputs(wshed,wshed_name,mod_sets,mod_names,month_start, month_
     fig= plt.figure(figsize = (34,28))
     spec = fig.add_gridspec(2,4)
 
+    #set up subplot coordinates
     had_sl = fig.add_subplot(spec[0, 0])
     had_ro = fig.add_subplot(spec[0, 1])
     had_pr = fig.add_subplot(spec[0, 2])
@@ -98,7 +99,7 @@ def analyze_wepp_outputs(wshed,wshed_name,mod_sets,mod_names,month_start, month_
                     y = (np.arange(1, n+1) / n) * 100
                     ylab = 'ECDF = Cumulative Frequency (%)'
 
-                #if input for freq_total_input == freq, plot ecdf for total (loss)/(mm)/(mm/hr)
+                #if input for freq_total_input == Total Sum, plot ecdf for total (loss)/(mm)/(mm/hr)
                 if freq_total_input == 'Total Sum':
                     y = (np.cumsum(x) / sum(x)) * 100
                     ylab = 'ECDF = Cumulative Total (%)'

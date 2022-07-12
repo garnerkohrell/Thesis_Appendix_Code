@@ -1,4 +1,4 @@
-def prep_data(cli_dir, wepp_out_dir, mod, month_start, month_end):
+def prep_data(wepp_out_dir, mod, month_start, month_end, SDR, TMDL_SD, TMDL_RO):
     '''
     Loads in wepp output data from .ebe and .loss files. Extracts Sediment
     delivery and runoff values from .ebe and then converts sed-del values to 
@@ -21,31 +21,6 @@ def prep_data(cli_dir, wepp_out_dir, mod, month_start, month_end):
     import pandas as pd
     import os
 
-    ######## Load in .cli files and prep precip data #########
-
-
-    #get cli files from input/cli directory, but only select one 
-    cli_files = [x for x in os.listdir(cli_dir) if x.endswith('.cli')]
-    cli_file = str(cli_dir + cli_files[1])
-
-    #read in first cligen file. The .cli files are constant across hillslopes
-    cli_df = pd.read_csv(cli_file, skiprows = 13, sep = '\s+| ', engine = 'python')
-    cli_df.drop([0,], axis = 0, inplace = True)
-    cli_df.reset_index(inplace = True)
-
-    #convert columns to floats
-    cli_df['Year'] = cli_df['year'].astype(int)
-    cli_df['Day'] = cli_df['da'].astype(int)
-    cli_df['Month'] = cli_df['mo'].astype(int)
-    cli_df['cli_pr'] = cli_df['prcp'].astype(float)
-    cli_df['st_dur'] = cli_df['dur'].astype(float)
-    cli_df['cli_tmax'] = cli_df['tmax'].astype(float)
-    cli_df['cli_tmin'] = cli_df['tmin'].astype(float)
-    cli_df['cli_tavg'] = (cli_df['cli_tmax'] + cli_df['cli_tmin']) / 2
-
-    #Find average precip intensity
-    cli_df['pri'] = (cli_df['cli_pr']) / cli_df['st_dur']
-    cli_df['pri'] = cli_df['pri'].fillna(0)
 
     #obs and future periods have different year lengths
     if mod == 'Obs':
@@ -53,35 +28,6 @@ def prep_data(cli_dir, wepp_out_dir, mod, month_start, month_end):
 
     else:
         years = 40
-
-
-    #select months in season
-    seasonal_cli = cli_df[cli_df['mo'].astype(int) >= month_start] 
-    seasonal_cli = seasonal_cli[seasonal_cli['mo'].astype(int) <= month_end]
-
-
-    #Find number of days where precip > 25mm (seasonal and growing season)
-    pr_25 = round(((seasonal_cli['cli_pr'][seasonal_cli['cli_pr'] > 25].count()) / years), 1)
-
-    #Find average precip intensity for all storm events
-    avg_pri= round((seasonal_cli['pri'][seasonal_cli['pri'] != 0].mean()), 1)
-
-    #Find average total seasonal and growing season precip 
-    avg_pr = round(((seasonal_cli['cli_pr'].sum()) / years), 1)
-
-    avg_dur = round(seasonal_cli['st_dur'].mean(), 1)
-
-    #Find average total max/min temperatures
-    avg_tmax = round(seasonal_cli['cli_tmax'].mean(), 1)
-    avg_tmin = round(seasonal_cli['cli_tmin'].mean(), 1)
-
-    print(avg_tmax)
-
-
-
-    #precip events to list for seasonal
-    PR_lst = seasonal_cli['cli_pr'].to_list()
-
 
 
     ##### Load in .ebe and .loss files ######
@@ -101,10 +47,11 @@ def prep_data(cli_dir, wepp_out_dir, mod, month_start, month_end):
 
 
     #output list that will hold all soil loss and runoff values for each hillslope
-    SL_lst = []
+    SD_lst = []
     RO_lst = []
-    PR_R_lst = []
-    PRi_R_lst = []
+    TMDL_SD_lst = []
+    TMDL_RO_lst = []
+
 
     ##### Prep data for graphing ######
 
@@ -160,14 +107,19 @@ def prep_data(cli_dir, wepp_out_dir, mod, month_start, month_end):
         #multiply sed delivery value (in kg/m) by profile width to get kg,
         #convert from kg to tons,
         #divide by area to get avg soil loss in tons/ha
+        #then multiply by sediment delivery ratio for watershed to get avg
+        #sediment delivery to watershed
 
         if area > 0:
-            season_df['soil_loss'] = (((season_df['Sed-Del']) * width) * 0.00110231) / area
+            season_df['WS_SD'] = ((((season_df['Sed-Del']) * width) * 0.00110231) / area) * SDR
 
             #get average total soil loss rate for hillslope and append to list
-            yearly_avg_SL = season_df['soil_loss'].sum() / years 
+            yearly_avg_SD = season_df['WS_SD'].sum() / years 
 
-            SL_lst.append(yearly_avg_SL)
+            SD_lst.append(yearly_avg_SD)
+
+            if yearly_avg_SD > TMDL_SD:
+                TMDL_SD_lst.append(yearly_avg_SD)
 
         if area == 0:
             pass
@@ -176,19 +128,24 @@ def prep_data(cli_dir, wepp_out_dir, mod, month_start, month_end):
         #remove snowmelt runoff events
         season_df = season_df[season_df['Precip'] > season_df['RO']]
 
+        yearly_avg_RO = season_df['RO'].sum() / years
+
         #get average total runoff depth for hillslope and append to list
-        RO_lst.append((season_df['RO'].sum() / years))
+        RO_lst.append(yearly_avg_RO)
 
-        #extend individual precipitation depths associated with runoff events to list
-        PR_R_lst.extend(season_df['Precip'].to_list())
+        if yearly_avg_RO > TMDL_RO:
+            TMDL_RO_lst.append(yearly_avg_RO)
 
-        merged_df = pd.merge(seasonal_cli, season_df, how = 'right', on = ['Day', 'Month','Year'])
 
-        #extend individual precipitation intensities associated with runoff events to list
-        PRi_R_lst.extend(merged_df['pri'].tolist())
 
-    #get average total soil loss and runoff for the entire watershed during the selected season
-    SL = sum(SL_lst) / len(hillslopes)
+    #get average total sediment delivery and runoff for the entire watershed during the selected season
+    SL = sum(SD_lst) / len(hillslopes)
     RO = sum(RO_lst) / len(hillslopes)
 
-    return SL_lst, RO_lst, PR_R_lst, PRi_R_lst, cli_df['cli_pr'], cli_df['pri'], RO, SL, avg_pr, avg_pri, pr_25, avg_dur, avg_tmax, avg_tmin
+    #Get the percentage of hillslopes in a watershed above TMDL field sediment delivery
+    total_TMDL_SD = (len(TMDL_SD_lst) / len(hillslopes)) * 100
+
+    #Get the percentage of hillslopes in a watershed abvove TMDL runoff
+    total_TMDL_RO = (len(TMDL_RO_lst) / len(hillslopes)) * 100
+
+    return SD_lst, RO_lst, SL, RO, total_TMDL_SD, total_TMDL_RO

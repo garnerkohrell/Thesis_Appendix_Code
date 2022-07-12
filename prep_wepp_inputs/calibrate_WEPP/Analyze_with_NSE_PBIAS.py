@@ -211,24 +211,20 @@ def NSE_PBIAS_Analysis(obs_dir, wshed, cli_dir, wepp_out_dir, hillID, mod_yrs, T
         ####get average runoff:precip ratio from monthly totals ###
 
         #Avg total monthly Pr
-        avg_pr_obs = obs_pr.groupby('Month')['filled_pr'].sum() / (len(obs_rot) / 2)
+        avg_pr_obs = obs_pr.groupby('Month')['filled_pr'].sum() / (len(obs_rot))
         avg_pr_mod = cli_df_sel.groupby('Month')['cli_pr'].sum() / 55
 
         #Avg total monthly RO
-        avg_RO_obs = obs_RO.groupby('Month')['RO'].sum() / (len(obs_rot) / 2)
+        avg_RO_obs = obs_RO.groupby('Month')['RO'].sum() / (len(obs_rot))
         avg_RO_mod = mod_df.groupby('Month')['RO'].sum() / 55
 
         #Avg total monthly TSS
-        avg_TSS_obs = obs_RO.groupby('Month')['TSS'].sum() / (len(obs_rot) / 2)
+        avg_TSS_obs = obs_RO.groupby('Month')['TSS'].sum() / (len(obs_rot))
         avg_TSS_mod = mod_df.groupby('Month')['TSS'].sum() / 55
 
         #Runoff ratio
         obs_RR = avg_RO_obs / avg_pr_obs
         mod_RR = avg_RO_mod / avg_pr_mod
-
-        #RO-TSS ratio
-        obs_SRR = avg_TSS_obs / avg_RO_obs
-        mod_SRR = avg_TSS_mod / avg_RO_mod
 
         months = [4,5,6,7,8,9,10,11]
 
@@ -384,7 +380,7 @@ import matplotlib.patches as mpatches
 subx_vals = [0,0,0,1,1,1]
 suby_vals = [0,1,2,0,1,2]
 
-def graph_comps(in_dic, x_lab, y_lab, title, out_name, comp_type, col_lab1, col_lab2, NSE_col, PBIAS_col):
+def graph_comps(in_dic, x_lab, y_lab, title, out_name, comp_type, col_lab1, col_lab2, ylimit, NSE_col, PBIAS_col):
     '''
     dic1 = first dictionary input option
     dic2 = second dictionary input option
@@ -429,6 +425,8 @@ def graph_comps(in_dic, x_lab, y_lab, title, out_name, comp_type, col_lab1, col_
         axes[subx,suby].set_xlabel(x_lab)
         axes[subx,suby].set_ylabel(y_lab)
 
+        axes[subx,suby].set_ylim(0,ylimit)
+
         #Add sub-title
         axes[subx,suby].set_title('{}'.format(wshed))
 
@@ -467,6 +465,6 @@ RO_ylab = 'Average Total Runoff (mm)'
 RR_ylab = 'Average Runoff Ratio (mm)'
 TSS_ylab = 'Average Total Soil Loss (tons/ha)'
 
-graph_comps(avg_vals_dic, 'Month', RO_ylab, RO_title, 'avgRO', 'full_cal', 'obs_RO', 'mod_RO', 'NSE_RO', 'PBIAS_RO')
-graph_comps(avg_vals_dic, 'Month', RR_ylab, RR_title, 'avgRR', 'full_cal', 'obs_RR', 'mod_RR', 'NSE_RR', 'PBIAS_RR')
-graph_comps(avg_vals_dic, 'Month', TSS_ylab, TSS_title, 'avgTSS', 'full_cal', 'obs_TSS', 'mod_TSS', 'NSE_TSS', 'PBIAS_TSS')
+graph_comps(avg_vals_dic, 'Month', RO_ylab, RO_title, 'avgRO', 'full_cal', 'obs_RO', 'mod_RO', 15, 'NSE_RO', 'PBIAS_RO')
+graph_comps(avg_vals_dic, 'Month', RR_ylab, RR_title, 'avgRR', 'full_cal', 'obs_RR', 'mod_RR', 0.15, 'NSE_RR', 'PBIAS_RR')
+graph_comps(avg_vals_dic, 'Month', TSS_ylab, TSS_title, 'avgTSS', 'full_cal', 'obs_TSS', 'mod_TSS', 0.42,'NSE_TSS', 'PBIAS_TSS')

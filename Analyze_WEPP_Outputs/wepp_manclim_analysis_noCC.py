@@ -144,22 +144,23 @@ def analyze_soil_loss(wshed,mod_lst,ymin,ymax,per_adopt_lst,wshed_name):
     #for each climate model. Climate models will be combined onto each
     #management scenario plot
 
-    scen_types = [['Per_0', 'CC_10', 'CC_20'],\
+    scen_types = [['Per_0','Per_m20','Per_B','Per_p20'],\
+                  ['Per_0_100','Per_m20_100','Per_B_100','Per_p20_100'],\
                   ['Per_0', 'CT_50', 'CT_100'],\
-                  ['Per_0','Per_m20','Per_B','Per_p20'],\
-                  ['Per_0_100','Per_m20_100','Per_B_100','Per_p20_100']]
+                  []]
 
     # define % Adoption rates for each management scenario 
-    adopt_rates = [[1, 10, 20],\
-                   [30, 50, 100],\
+    adopt_rates = [per_adopt_lst,\
                    per_adopt_lst,\
-                   per_adopt_lst]
+                   [30, 50, 100],\
+                   []]
 
     # define management scenario names
-    scen_names = ['Cover Cropping',\
+    scen_names = ['Perennial Integration',\
+                  'Perennial Integration with 100% Consv. Till.',\
                   'Conservation Tillage',\
-                  'Perennial Integration',\
-                  'Perennial Integration with 100% Consv. Till.']
+                  '']
+
 
 
     #Set up a subplot for each watershed that contains plots for each watershed
@@ -168,6 +169,8 @@ def analyze_soil_loss(wshed,mod_lst,ymin,ymax,per_adopt_lst,wshed_name):
     #subplot x and y coordinate values. Used to position subplots.
     subx_vals = [0,0,1,1]
     suby_vals = [0,1,0,1]
+
+    axes[1,1].axis('off')
 
     def graph_prepped_data(graphed_var, y_lab):
 
@@ -222,7 +225,7 @@ def analyze_soil_loss(wshed,mod_lst,ymin,ymax,per_adopt_lst,wshed_name):
                         years = 40
                     
                     #define wepp output directory where data is stored
-                    wepp_out_dir = str('C:/Users/Garner/Soil_Erosion_Project/WEPP_PRWs/{}/New_Runs/{}/{}/wepp/output/'.format(wshed,mod,scen))
+                    wepp_out_dir = str('C:/Users/Garner/Soil_Erosion_Project/WEPP_PRWs_Final/{}/New_Runs/{}/{}/wepp/output/'.format(wshed,mod,scen))
 
                     #run prep_SL_RO_data using defined number of years and wepp output directory
                     soil_loss, unsustain_loss, runoff = prep_SL_RO_data(wepp_out_dir, years)
@@ -244,7 +247,7 @@ def analyze_soil_loss(wshed,mod_lst,ymin,ymax,per_adopt_lst,wshed_name):
 
             table_df = pd.DataFrame.from_dict(table_dic,orient='index').transpose()
 
-            table_df.to_excel('C:/Users/Garner/Soil_Erosion_Project/WEPP_PRWs/Future_Man_Outputs/Unsustainable_Loss/{}_{}.xlsx'.format(wshed,scen_name))
+            table_df.to_excel('C:/Users/Garner/Soil_Erosion_Project/WEPP_PRWs_Final/Future_Man_Outputs/Soil_Loss/{}_{}_noCC.xlsx'.format(wshed,scen_name))
 
             #Set up dataframe with model names as column heads
             output_df = pd.DataFrame({'GFDL-ESM2G 4.5 2020-59':B3_59,\
@@ -301,18 +304,18 @@ def analyze_soil_loss(wshed,mod_lst,ymin,ymax,per_adopt_lst,wshed_name):
             for mod_name, point_shape, color in zip(mod_names,point_shapes,colors):
                 create_plot(output_df,mod_name,point_shape,color)
 
-    graph_prepped_data('unsustain', 'Hillslopes with Unsustainable Soil Loss (%)')
+    graph_prepped_data('soil_loss', 'Average Total Hillslope Soil Loss (t/ha)')
 
     #create legend
     handles, labels = axes[0,1].get_legend_handles_labels()
-    fig.legend(handles, labels, bbox_to_anchor = [1.15,0.85],fontsize=20)
+    fig.legend(handles, labels, bbox_to_anchor = [0.83,0.40],fontsize=20)
 
-    fig.suptitle('Percent of Hillslopes with Unsustainable Soil Loss in {} County, MN HUC12 Watershed\nwith Varying Management Scenarios and Future Climates'.format(wshed_name),\
+    fig.suptitle('Average Total Growing Season Soil Loss in {} County, MN HUC12 Watershed\nwith Varying Management Scenarios and Future Climates'.format(wshed_name),\
                  fontsize = 24)
 
     fig.subplots_adjust(top=0.92)
 
-    fig.savefig('C:/Users/Garner/Soil_Erosion_Project/WEPP_PRWs/Future_Man_Outputs/Unsustainable_Loss/{}_.png'.format(wshed), bbox_inches = "tight")
+    fig.savefig('C:/Users/Garner/Soil_Erosion_Project/WEPP_PRWs_Final/Future_Man_Outputs/Soil_Loss/{}_noCC.png'.format(wshed), bbox_inches = "tight")
 
 
 
@@ -326,11 +329,11 @@ S_ymax = 3 #ST1
 ST1_per_adopt = [0, 30, 50, 66]
 
 G_ymin = 0 #GO1
-G_ymax = 30 #GO1
+G_ymax = 9 #GO1
 GO1_per_adopt = [0, 42, 62, 79.1]
 
-D_ymin = 0 #GO1
-D_ymax = 30 #GO1
+D_ymin = 0 #DO1
+D_ymax = 7 #DO1
 DO1_per_adopt = [0, 25, 45, 72]
 
 #Run function for each watershed

@@ -278,22 +278,24 @@ def analyze_sed_del(wshed,SDR,TMDL_SD,TMDL_RO,mod_lst,ymin,ymax,per_adopt_lst,ws
                          'HadGEM2-CC 8.5 2020-59','HadGEM2-CC 8.5 2060-99',\
                          'Baseline 1965-2019']
 
+            point_shapes = ['-o','-v','-^','-s','-P','-D','-<','->','-x']
+
             colors = ['deepskyblue', 'mediumblue',\
                     'red', 'darkred',\
                     'limegreen', 'darkgreen',\
                     'fuchsia', 'purple',\
                     'black']
 
-            def create_plot(df,mod,color):
+            def create_plot(df,mod, point_shape, color):
 
                 x = df['% Adoption']
                 y = df[mod]
 
                 #plot data
-                axes[subx,suby].plot(x,y, '-o',label = mod, color = color)
+                axes[subx,suby].plot(x,y, point_shape, label = mod, color = color)
 
                 #standardize y-axis
-                axes[subx,suby].set_ylim(bottom = ymin, top = ymax)
+                axes[subx,suby].set_ylim(bottom = ymin, top = ymax) 
 
                 #set axis labels
                 axes[subx,suby].set_xlabel('Adoption across Watershed (%)', fontsize = 22)
@@ -308,19 +310,19 @@ def analyze_sed_del(wshed,SDR,TMDL_SD,TMDL_RO,mod_lst,ymin,ymax,per_adopt_lst,ws
 
                 #set vertical line for TMDL
 
-                axes[subx,suby].axhline(y=TMDL_val, color='black')
+                axes[subx,suby].axhline(y=TMDL_val, color='gold')
 
 
             #loop through model names and colors, then plot
-            for mod_name, color in zip(mod_names,colors):
-                create_plot(output_df,mod_name,color)
+            for mod_name, point_shape, color in zip(mod_names,point_shapes, colors):
+                create_plot(output_df,mod_name,point_shape,color)
 
-    graph_prepped_data('runoff', TMDL_RO, 'Runoff', 'Average Total Hillslope Runoff (t/ha)')
+    graph_prepped_data('runoff', TMDL_RO, 'Runoff', 'Average Total Hillslope Runoff (mm)')
 
     #create legend
     handles, labels = axes[0,1].get_legend_handles_labels()
 
-    handles.append((plt.Line2D([], [], color='black')))
+    handles.append((plt.Line2D([], [], color='gold')))
 
     labels.append('-50% Watershed TSS TMDL')
 
@@ -334,7 +336,7 @@ def analyze_sed_del(wshed,SDR,TMDL_SD,TMDL_RO,mod_lst,ymin,ymax,per_adopt_lst,ws
     fig.savefig('C:/Users/Garner/Soil_Erosion_Project/WEPP_PRWs/Future_Man_Outputs/Runoff/{}_.png'.format(wshed), bbox_inches = "tight")
 
 
-
+#Example for runoff figures
 
 mod_lst = ['B3_59', 'B3_99', 'B4_59', 'B4_99',\
            'L3_59', 'L3_99', 'L4_59', 'L4_99',\

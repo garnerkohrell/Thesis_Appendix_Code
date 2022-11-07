@@ -51,6 +51,10 @@ def analyze_wepp_outputs(wshed,wshed_name,mod_sets,mod_names,month_start, month_
     colors = [['black', 'limegreen', 'darkgreen','fuchsia', 'purple'],\
               ['black','deepskyblue', 'mediumblue','red', 'darkred']]
 
+    #create list for point shapes 
+    shape_sets = [['x','P','D','<','>'],\
+                  ['x','o','v','^',"s"]]
+
     #create list for legend items
     labels = [['Baseline w/ Perennials 1965-2019','HadGEM2-CC 4.5 2020-59','HadGEM2-CC 4.5 2060-99',\
                'HadGEM2-CC 8.5 2020-59','HadGEM2-CC 8.5 2060-99'],\
@@ -61,9 +65,9 @@ def analyze_wepp_outputs(wshed,wshed_name,mod_sets,mod_names,month_start, month_
                   [gf_sd, gf_sd_noPer, gf_ro, gf_ro_noPer]]
 
 
-    for mod_set, color_set, mod_name, subx_pair,lab_set in zip(mod_sets,colors,mod_names,subx_pairs,labels):
+    for mod_set, color_set, shape_set, mod_name, subx_pair,lab_set in zip(mod_sets,colors,shape_sets,mod_names,subx_pairs,labels):
 
-        for mod,color,line_lab in zip(mod_set,color_set,lab_set):
+        for mod,color,point_shape,line_lab in zip(mod_set,color_set,shape_set,lab_set):
 
             if mod == 'Obs':
                 #define wepp output directory where data is stored for baseline and no perennial scens
@@ -107,7 +111,7 @@ def analyze_wepp_outputs(wshed,wshed_name,mod_sets,mod_names,month_start, month_
                     y = (np.cumsum(x) / sum(x)) * 100
                     ylab = 'ECDF = Cumulative Total (%)'
 
-                subx.scatter(x,y, s=35, color = color, label = line_lab)
+                subx.scatter(x,y, marker = point_shape, s=35, color = color, label = line_lab)
 
                 #set axis labels
                 subx.set_xlabel(xlab, fontsize = 25)
@@ -126,10 +130,10 @@ def analyze_wepp_outputs(wshed,wshed_name,mod_sets,mod_names,month_start, month_
 
                 #add 'No Perennials in Future' to subplot title when var_lst has datasets from no perennial scenario
                 if var_lst == SD_lst_noPer or var_lst == RO_lst_noPer:
-                    subx.set_title('No Perennials in Future', fontsize = 27)
+                    subx.set_title(f'{mod_name}\nNo Perennials in Future', fontsize = 27)
 
                 if var_lst == SD_lst or var_lst == RO_lst:
-                    subx.set_title('Perennials Included', fontsize = 27)
+                    subx.set_title(f'{mod_name}\nPerennials Included', fontsize = 27)
 
                 subx.set_xlim(0,xlimit)
 
@@ -138,7 +142,7 @@ def analyze_wepp_outputs(wshed,wshed_name,mod_sets,mod_names,month_start, month_
     fig.suptitle('{} ECDFs for Average Total Hillslope Sediment Delivery and Runoff during Minnesota Growing Season 1965-2099:\n{} County HUC12 Watershed'.format(freq_total_input,wshed_name),\
                 fontsize = 30)
 
-    fig.subplots_adjust(top=0.92)
+    fig.subplots_adjust(top=0.90)
 
     #create legend
     handles1, labels1 = had_sd.get_legend_handles_labels()

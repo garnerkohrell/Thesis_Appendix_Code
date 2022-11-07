@@ -51,6 +51,10 @@ def analyze_wepp_outputs(wshed,wshed_name,mod_sets,mod_names,month_start, month_
     colors = [['black', 'limegreen', 'darkgreen','fuchsia', 'purple'],\
               ['black','deepskyblue', 'mediumblue','red', 'darkred']]
 
+    #create list for point shapes 
+    shape_sets = [['x','P','D','<','>'],\
+                  ['x','o','v','^',"s"]]
+
     #create list for legend items
     labels = [['Baseline w/ Perennials 1965-2019','HadGEM2-CC 4.5 2020-59','HadGEM2-CC 4.5 2060-99',\
                'HadGEM2-CC 8.5 2020-59','HadGEM2-CC 8.5 2060-99'],\
@@ -60,9 +64,9 @@ def analyze_wepp_outputs(wshed,wshed_name,mod_sets,mod_names,month_start, month_
     subx_pairs = [[had_sl,had_ro,had_pr,had_pri],[gf_sl,gf_ro,gf_pr,gf_pri]]
 
 
-    for mod_set, color_set, mod_name, subx_pair,lab_set in zip(mod_sets,colors,mod_names,subx_pairs,labels):
+    for mod_set, color_set, shape_set, mod_name, subx_pair,lab_set in zip(mod_sets,colors, shape_sets,mod_names,subx_pairs,labels):
 
-        for mod,color,line_lab in zip(mod_set,color_set,lab_set):
+        for mod,color,point_shape,line_lab in zip(mod_set,color_set,shape_set,lab_set):
 
             if mod == 'Obs':
                 #define wepp output directory where data is stored
@@ -71,8 +75,8 @@ def analyze_wepp_outputs(wshed,wshed_name,mod_sets,mod_names,month_start, month_
 
             else:
                 #define wepp output directory where data is stored
-                wepp_out_dir = str('C:/Users/Garner/Soil_Erosion_Project/WEPP_PRWs/{}/New_Runs/{}/Per_B/wepp/output/'.format(wshed,mod))
-                wepp_cli_dir = str('C:/Users/Garner/Soil_Erosion_Project/WEPP_PRWs/{}/New_Runs/{}/Per_B/wepp/runs/'.format(wshed,mod))
+                wepp_out_dir = str('C:/Users/Garner/Soil_Erosion_Project/WEPP_PRWs/{}/New_Runs/{}/Per_0/wepp/output/'.format(wshed,mod))
+                wepp_cli_dir = str('C:/Users/Garner/Soil_Erosion_Project/WEPP_PRWs/{}/New_Runs/{}/Per_0/wepp/runs/'.format(wshed,mod))
 
             #run prep_data for months provided in function input
             SL_lst, RO_lst, PR_lst, PRi_lst, PR, PRi, RO,SL, avg_pr, avg_pri, pr_25, avg_dur,avg_tmax,avg_tmin = prep_data(wepp_cli_dir,wepp_out_dir,mod,month_start,month_end)
@@ -104,7 +108,7 @@ def analyze_wepp_outputs(wshed,wshed_name,mod_sets,mod_names,month_start, month_
                     y = (np.cumsum(x) / sum(x)) * 100
                     ylab = 'ECDF = Cumulative Total (%)'
 
-                subx.scatter(x,y, s=35, color = color, label = line_lab)
+                subx.scatter(x, y, marker = point_shape, s=35, color = color, label = line_lab)
 
                 #set axis labels
                 subx.set_xlabel(xlab, fontsize = 25)
@@ -123,7 +127,7 @@ def analyze_wepp_outputs(wshed,wshed_name,mod_sets,mod_names,month_start, month_
 
                 subx.grid()
     
-    fig.suptitle('{} ECDFs for Average Total Soil Loss and Runoff during Minnesota Spring by Hillslope 1965-2099:\n{} County HUC12 Watershed'.format(freq_total_input,wshed_name),\
+    fig.suptitle('{} ECDFs for Average Total Soil Loss and Runoff during Minnesota Growing Season by Hillslope 1965-2099:\n{} County HUC12 Watershed, No Perennials'.format(freq_total_input,wshed_name),\
                 fontsize = 30)
 
     fig.subplots_adjust(top=0.92)
@@ -153,9 +157,9 @@ mod_names = ['HadGEM2-CC',\
              'GFDL-ESM2G']
 
 #set x-axis limit for each watershed and variable
-DO1_limits = [4,20,150,60]
-GO1_limits = [6,20,200,100]
-ST1_limits = [3,20,100,80]
+DO1_limits = [50,60,150,60]
+GO1_limits = [25,40,200,100]
+ST1_limits = [15,50,100,80]
 
 #get list of lists for x-axis limits
 wshed_xlimits = [DO1_limits, GO1_limits, ST1_limits]
@@ -167,4 +171,4 @@ wshed_xlimits = [DO1_limits, GO1_limits, ST1_limits]
 
 
 for wshed, wshed_name, wshed_xlim in zip(wshed_lst, wshed_names, wshed_xlimits):
-    analyze_wepp_outputs(wshed, wshed_name, mod_sets, mod_names, 4, 11, 'Frequency', wshed_xlim)
+    analyze_wepp_outputs(wshed, wshed_name, mod_sets, mod_names, 4, 11, 'Total Sum', wshed_xlim)
